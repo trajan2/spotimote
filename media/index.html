@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        " http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Spotimote</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <script type="text/javascript" src="/media/jquery-1.4.2.min.js"></script>
+
+    <script type="text/javascript">
+
+    function setPlayPause(is_playing){
+        if (is_playing)
+            $("#playpause i").text = 'play_arrow';
+        else
+            $("#playpause i").text = 'pause';
+    }
+
+    function play(number){
+        $.get('/play', {"number": number}, function(data){
+            if (!data["success"]){
+                showPlayList('');
+            }
+        });
+    }
+
+
+    $(document).ready(function(){
+        $("button").click(function(){
+            if  (this.id == "search_button"){
+                search();
+            }else{
+            //if($.inArray(this.id, ["shuffle", "back", "playpause", "forward", "repeat"])){
+                $.get('/action', {action: this.id}, function(data){
+                    // update the play/pause button
+                    setPlayPause(data["is_playing"]);
+                });
+            }
+        });
+    });
+
+    </script><script type="text/javascript">
+    function showList(list){
+        html = "";
+        for (i = 0; i < list.length; i++){
+             html += "<span onclick='play(" + i+")'>" + list[i]["song"];
+             html += "&nbsp;" + list[i]["artist"] + "</span><br>\n";
+        }
+        //alert(html);
+        $("#content").html(html);
+    }
+    </script><script type="text/javascript">
+
+    function showPlaylist(url){
+        $.get('/list', {'url': url}, function(data){
+            // update the list
+            $("#title").text = data["title"];
+        });
+        showList(data["list"], false);
+    }
+
+
+    function search(){
+        url = "https://open.spotify.com/search/" + $("#search_type").val() + "/";
+        url += encodeURI($("#search_box").val());
+        $.get('/list', {'url': url}, function(data) {
+            // receive and display the resulting list
+            $("#title").text($("#search_type").val() + " with " + data['title']) ;
+            showList(data["list"]);
+        });
+    }
+
+    </script>
+    <link rel="stylesheet" type="text/css" href="media/style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="header-cont">
+        <button type="button" id="shuffle"><i class="material-icons">repeat</i></button>
+        <button type="button" id="back"><i class="material-icons">fast_rewind</i></button>
+        <button type="button" id="playpause"><i class="material-icons">play_arrow</i><i class="material-icons">pause</i></button>
+        <button type="button" id="forward"><i class="material-icons">fast_forward</i>
+</button>
+        <button type="button" id="repeat"><i class="material-icons">loop</i>
+</button>
+            <p>
+                <input type="text" id="search_box"/>
+                <select name="search_type" id="search_type">
+                    <option value="songs">Song</option>
+                    <option value="artists">Artist</option>
+                    <option value="albums">Album</option>
+                    <option value="playlists">Playlist</option>
+                </select>
+                <button type="button" id="search_button"><i class="material-icons">search</i></button>
+            </p>
+    </div><p><br><br></p>
+<h1 id="title">Songs</h1>
+<div id="content"></div>
+</body>
+
+</html>
