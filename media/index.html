@@ -8,10 +8,12 @@
     <script type="text/javascript" src="/media/jquery-1.4.2.min.js"></script>
 
     <script type="text/javascript">
-
+    //<!--
     function setPlayPause(is_playing){
-        if (is_playing)
+                //alert(is_playing);
+        if (is_playing){
             $("#playpause i").text = 'play_arrow';
+        }
         else
             $("#playpause i").text = 'pause';
     }
@@ -19,57 +21,110 @@
     function play(number){
         $.get('/play', {"number": number}, function(data){
             if (!data["success"]){
+                alert("reload");
                 showPlayList('');
             }
         });
     }
+    attributes = {
+        "playlists": [
+            ["playlist", ["innerHTML", "href"], "div.media-object-hoverable div div.react-contextmenu-wrapper a"],
+            ["user", ["innerHTML", "href"], "div.media-object div.mo-meta span a"]],
+        "artists": [
+            ["artist", ["innerHTML", "href"], "div.media-object-hoverable div.mo-info div a"]],
+        "albums": [
+            ["album", ["innerHTML", "href"], "div.media-object div div.mo-info  div a"],
+        ],
+        "songs": [
+            ["song", ["innerHTML"], ".tracklist-name"],
+            ["artist", ["innerHTML", "href"], "span.artists-album span span a"]],
+        "user": [
+            ["song", ["innerHTML"], ".tracklist-name"],
+            ["artist", ["innerHTML", "href"], "span.artists-album span span a"]],
+        "artist": [
+            ["song", ["innerHTML"], "span.tracklist-name"]],
+        "album": [
+            ["song", ["innerHTML"], "span.tracklist-name"]]
+    }
 
+    function printList(list, type){
+        // check that all lists are of same length
+        len = -1
+        for (att in list){
+            if (len == -1) len=list[att].length;
+            if (len != list[att].length){
+                $("#content").html("list sizes don't match" + list);
+                return False;
+            }
+        }
+        playable = (type == "album" || type == "songs" || type == "artist" || type=="user");
+        html = "";
+        for (i = 0; i < len; i++){
+            if (playable){
+                html += "<button type='button' onclick='play(" + i+")'>";
+                //html += list["song"][i]["innerHTML"];
+                html += '<i class="material-icons">play_arrow</i></button>\n';
+            }
+            for (att in list){
+                if("href" in list[att][i]){
+                    html += "<a href=# onclick='getList(\""+list[att][i]["href"] +"\")'>";
+                }else{
+                    html += "<span>";
+                }
+                html += list[att][i]["innerHTML"];
+                if("href" in list[att][i]){
+                    html += "</a>";
+                }else{
+                    html += "</span>";
+                }
+                html += "&nbsp;-&nbsp;"
+            }
+            html += "<br>\n\n";
+        }
+        $("#content").html(html);
+    }
+
+    function getList(url){
+        $.get('/list', {'url': url}, function(data){
+            // update the list
+            $("#title").text = data["title"];
+            printList(data["list"], data["type"]);
+        });
+    }
+
+    function getSearch(){
+        url = "https://open.spotify.com/search/" + $("#search_type").val() + "/";
+        url += encodeURI($("#search_box").val());
+        $.get('/list', {'url': url}, function(data) {
+            // receive and display the resulting list
+            $("#title").text($("#search_type").val() + " with '" + data['title'] + "'") ;
+            printList(data["list"], data["type"]);
+        });
+    }
 
     $(document).ready(function(){
+        getList("");
+
         $("button").click(function(){
-            if  (this.id == "search_button"){
-                search();
+            if (this.id == "search_button"){
+                getSearch();
             }else{
-            //if($.inArray(this.id, ["shuffle", "back", "playpause", "forward", "repeat"])){
                 $.get('/action', {action: this.id}, function(data){
                     // update the play/pause button
                     setPlayPause(data["is_playing"]);
                 });
             }
         });
+
+        $("#search_box").keydown(function(e){
+            if (e.keyCode === 13){
+                getSearch();
+                return;
+            }
+        });
     });
 
-    </script><script type="text/javascript">
-    function showList(list){
-        html = "";
-        for (i = 0; i < list.length; i++){
-             html += "<span onclick='play(" + i+")'>" + list[i]["song"];
-             html += "&nbsp;" + list[i]["artist"] + "</span><br>\n";
-        }
-        //alert(html);
-        $("#content").html(html);
-    }
-    </script><script type="text/javascript">
-
-    function showPlaylist(url){
-        $.get('/list', {'url': url}, function(data){
-            // update the list
-            $("#title").text = data["title"];
-        });
-        showList(data["list"], false);
-    }
-
-
-    function search(){
-        url = "https://open.spotify.com/search/" + $("#search_type").val() + "/";
-        url += encodeURI($("#search_box").val());
-        $.get('/list', {'url': url}, function(data) {
-            // receive and display the resulting list
-            $("#title").text($("#search_type").val() + " with " + data['title']) ;
-            showList(data["list"]);
-        });
-    }
-
+    //-->
     </script>
     <link rel="stylesheet" type="text/css" href="media/style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -80,13 +135,13 @@
     <div class="header-cont">
         <button type="button" id="shuffle"><i class="material-icons">repeat</i></button>
         <button type="button" id="back"><i class="material-icons">fast_rewind</i></button>
-        <button type="button" id="playpause"><i class="material-icons">play_arrow</i><i class="material-icons">pause</i></button>
+        <button type="button" id="playpause"><i class="material-icons">play_arrow pause</i></button>
         <button type="button" id="forward"><i class="material-icons">fast_forward</i>
 </button>
         <button type="button" id="repeat"><i class="material-icons">loop</i>
 </button>
             <p>
-                <input type="text" id="search_box"/>
+                <input type="text" id="search_box" />
                 <select name="search_type" id="search_type">
                     <option value="songs">Song</option>
                     <option value="artists">Artist</option>
@@ -95,7 +150,7 @@
                 </select>
                 <button type="button" id="search_button"><i class="material-icons">search</i></button>
             </p>
-    </div><p><br><br></p>
+    </div><p><br><br><br></p>
 <h1 id="title">Songs</h1>
 <div id="content"></div>
 </body>

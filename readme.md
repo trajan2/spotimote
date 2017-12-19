@@ -5,7 +5,7 @@
 - cherrypy
 - a Spotify account
 
-##Start server 
+## Start server 
 
 ```bash
 python3 server.py <username> <password>
